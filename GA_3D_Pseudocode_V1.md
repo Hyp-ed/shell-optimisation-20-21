@@ -82,12 +82,14 @@ for i = 1 : 3 : 3 * G
 		run_COMSOL_CFD()
 		save_COMSOL_results(result.csv)
 		result = read_csv(result.csv)
-		fitness_gen.append(result)
+
+		tag = "I"
+		fitness_gen.append([result;tag])
 
 
 sort(fitness_gen, decreasing) #(BUT ALSO NEED TO STORE THEIR INDICES)
 fitness_gen_index = [...] #to match the fitness scores to individual members of the generation
-fitness_history.append(fitness_gen[1])
+fitness_history.append(fitness_gen[:, 1])
 
 
 ## ACTUAL GA
@@ -249,18 +251,29 @@ while not convergence_conditions
 		save_to_CSV(coords.csv, curv3_temp)
 
 		write_to_TXT(status.txt, "WORKING")
-		run_solidworks_macro() #will update status.txt once done
+		run_solidworks_macro() #that script will update status.txt once done
 
 		if read(status.txt) == "DONE"
 			run_COMSOL_CFD()
 			save_COMSOL_results(result.csv)
 			result = read_csv(result.csv)
-			fitness_gen.append(result)
+
+			if i <= P
+				tag = "P"
+			elif P < i < P + C
+				tag = "C"
+			elif P + C < i <= P + 2*C
+				tag = "CM"
+			elif P + 2*C < i <= P + 3*C
+				tag = "M"
 
 
-	sort(fitness_gen, decreasing) #(BUT ALSO NEED TO STORE THEIR INDICES)
-	fitness_gen_index = [...] #to match the fitness scores to individual members of the generation
-	fitness_history.append(fitness_gen[1])
+			fitness_gen.append([result; tag])
+
+
+	[temp, order] = sort(fitness_gen) #(BUT ALSO NEED TO STORE THEIR INDICES)
+	fitness_gen = fitness_gen[:, order]
+	fitness_history.append(fitness_gen[:, 1])
 
 
 
@@ -272,6 +285,7 @@ while not convergence_conditions
 
 # Current issues: need to make sure amount of mutated children is ok (currently generates 3 * P + 1, should be either P + 3 * C
 # (with C being appropriate given P) or 3 * P + C, although then have to choose which one to mutate)
+
 
 
 
