@@ -1,15 +1,19 @@
 clear; clc; close all;
 
+global curv1_target curv2_target curv3_target
+
+
 %% Input params
 y0 = 2; %y-coord of the top of the rectillinear chassis (y = 0 at chassis bottom edge)
 z0 = 2; %z-coord of the side of the rectillinear chassis (z = 0 at centerline)
 G = 5; % max no. of generations
+precision = 2; % no. of d.p. of coords
 
 % Dummy variable to define minimum drag shape
 % CFD will evaluate "closeness" to this shape for now
-curv1_target = [1.1*y0, 1.15*y0, 1.1*y0];
-curv2_target = [1.05*y0, 1.1*y0, 1.05*y0];
-curv3_target = [1.15*z0, 1.3*z0, 1.15*z0];
+curv1_target = [1.1*y0; 1.15*y0; 1.1*y0];
+curv2_target = [1.05*y0; 1.1*y0; 1.05*y0];
+curv3_target = [1.15*z0; 1.3*z0; 1.15*z0];
 
 %% Setting initial values of L x 3 curve matrices
 % XYZ coords are the columns, pt. indices are the rows
@@ -76,10 +80,10 @@ for i = 1 : G - 1
 	curv3_new = curv3_ini;
 
 	for j = 2 : 4 %first and last pts remain fixed
-		curv1_new(j, 2) = curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand();
-		curv2_new(j, 2) = curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand();
-		curv2_new(j, 3) = a * curv2_new(j, 2) + b;
-		curv3_new(j, 3) = curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand();
+		curv1_new(j, 2) = round(curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand(), precision);
+		curv2_new(j, 2) = round(curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand(), precision);
+		curv2_new(j, 3) = round(a * curv2_new(j, 2) + b, precision);
+		curv3_new(j, 3) = round(curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand(), precision);
 	end
 
 	curv1 = [curv1, curv1_new];
@@ -98,9 +102,9 @@ for i = 1 : 3 : 3*G
 	curv1_temp = curv1(:, i:i+2);
 	curv2_temp = curv2(:, i:i+2);
 	curv3_temp = curv3(:, i:i+2);
-	save_to_CSV('coords.csv', curv1_temp);
-	save_to_CSV('coords.csv', curv2_temp);
-	save_to_CSV('coords.csv', curv3_temp);
+	save_to_CSV('coords1.csv', curv1_temp);
+	save_to_CSV('coords2.csv', curv2_temp);
+	save_to_CSV('coords3.csv', curv3_temp);
 
 	write_to_TXT('status.txt', "WORKING");
 	run_solidworks_macro(); %will update status.txt once done
@@ -108,7 +112,7 @@ for i = 1 : 3 : 3*G
 	if fileread('status.txt') == "DONE"
 		run_COMSOL_CFD();
 		save_COMSOL_results('result.csv');
-		result = read_csv('result.csv');
+		result = read_CSV('result.csv');
 
 		tag = "I";
 		fitness_gen = [fitness_gen, [result; tag]];
@@ -203,7 +207,7 @@ while generation ~= convergence_conditions
 
 
 	% Create crossover + mutation subgroup
-	for i = 2 to 4
+	for i = 2 : 4
 		for j = 1 : 6 : 3*P
 			crand1 = randi(1 / c_rate);
 			crand2 = randi(1 / c_rate);
@@ -233,12 +237,12 @@ while generation ~= convergence_conditions
 			mrand2 = randi(1 / m_rate);
 
 			if mrand1 == 1
-				curv1_parents_temp(j, 2) = curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand();
+				curv1_parents_temp(j, 2) = round(curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand(), precision);
             end
             
 			if mrand2 == 1
-				curv2_parents_temp(j, 2) = curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand();
-				curv2_parents_temp(j, 3) = a * curv2_new(j, 2) + b;
+				curv2_parents_temp(j, 2) = round(curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand(), precision);
+				curv2_parents_temp(j, 3) = round(a * curv2_new(j, 2) + b, 2);
             end
         end
         
@@ -246,7 +250,7 @@ while generation ~= convergence_conditions
 			mrand3 = randi(1 / m_rate);
 
 			if mrand3 == 1
-				curv3_parents_temp(j, 3) = curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand();
+				curv3_parents_temp(j, 3) = round(curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand(), precision);
             end
         end
 	curv1_new = curv1_parents_temp;
@@ -265,17 +269,17 @@ while generation ~= convergence_conditions
 			mrand1 = randi(1 / m_rate);
 			mrand2 = randi(1 / m_rate);
 			if mrand1 == 1
-				curv1_parents_temp(j, 2) = curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand();
+				curv1_parents_temp(j, 2) = round(curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand(), precision);
             end
 			if mrand2 == 1
-				curv2_parents_temp(j, 2) = curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand();
-				curv2_parents_temp(j, 3) = a * curv2_new(j, 2) + b;
+				curv2_parents_temp(j, 2) = round(curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand(), precision);
+				curv2_parents_temp(j, 3) = round(a * curv2_new(j, 2) + b, precision);
             end
         end        
 		for j = 3 : 3 : 3*P
 			mrand3 = randi(1 / m_rate);
 			if mrand3 == 1
-				curv3_parents_temp(j, 3) = curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand();
+				curv3_parents_temp(j, 3) = round(curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand(), precision);
             end
         end
 	curv1_new = curv1_parents_temp;
@@ -294,9 +298,9 @@ while generation ~= convergence_conditions
 		curv1_temp = curv1(:, i:i+2);
 		curv2_temp = curv2(:, i:i+2);
 		curv3_temp = curv3(:, i:i+2);
-		save_to_CSV('coords.csv', curv1_temp);
-		save_to_CSV('coords.csv', curv2_temp);
-		save_to_CSV('coords.csv', curv3_temp);
+		save_to_CSV('coords1.csv', curv1_temp);
+		save_to_CSV('coords2.csv', curv2_temp);
+		save_to_CSV('coords3.csv', curv3_temp);
 
 		write_to_TXT('status.txt', "WORKING");
 		run_solidworks_macro(); %that script will update status.txt once done
@@ -304,7 +308,7 @@ while generation ~= convergence_conditions
 		if fileread('status.txt') == "DONE"
 			run_COMSOL_CFD();
 			save_COMSOL_results('result.csv')
-			result = read_csv('result.csv');
+			result = read_CSV('result.csv');
 
 			if i <= P
 				tag = "P";
@@ -340,7 +344,7 @@ Current issues: need to make sure amount of mutated children is ok (currently ge
 
 
 
-function csv_read = read_csv(file)
+function csv_read = read_CSV(file)
     csv_read = csvread(file);
 end
     
@@ -368,16 +372,30 @@ end
 
 % For now dummy fn that returns a result based on how close to dummy target
 function cfd = run_COMSOL_CFD()
-    %curves = read_csv('coords.csv')
+
+    global curv1_target curv2_target curv3_target
+    
+    curv1_dummy = csvread('coords1.csv');
+    curv2_dummy = csvread('coords2.csv');
+    curv3_dummy = csvread('coords3.csv');
+    
+    curv1_score = abs(curv1_dummy(2:4, 2) - curv1_target);
+    curv2_score = abs(curv2_dummy(2:4, 2) - curv2_target);
+    curv3_score = abs(curv3_dummy(2:4, 3) - curv3_target);
+    dummy_score = sum(curv1_score) + sum(curv2_score) + sum(curv3_score);
+
+    save_to_CSV('result.csv', dummy_score)
+      
 
 	%cfd = fprintf("Run COMSOL sim function not finished!\n\n");
 end
 
 % For now saves the dummy array from run_COMSOL_CFD
 function cfd_res = save_COMSOL_results(file)
-    % Dummy result, change later
-    dummy_result = 400 + 100 * rand();
-    save_to_CSV(file, dummy_result)
+    % Dummy result, currently replaced with the run_COMSOL_CFD dummy
+    % function
+    %dummy_result = 400 + 100 * rand();
+    %save_to_CSV(file, dummy_result)
     
 	%cfd_res = fprintf("Save COMSOL results function not finished!\n\n");
 end
