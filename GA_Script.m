@@ -1,3 +1,6 @@
+clear; clc; close all;
+
+
 %% Setting initial values of L x 3 curve matrices
 % XYZ coords are the columns, pt. indices are the rows
 % L is the no. of pts on the curves. L = 5 for now, pts 1 & 5 remain fixed
@@ -49,7 +52,7 @@ elseif z_max >= 3
 end
 
 curv1_YBOUND = [y0, y_max];
-curv2_YBOUND = [y0, y_max]; #can manually adjust if want it to be smaller than the curv1 bound
+curv2_YBOUND = [y0, y_max]; %can manually adjust if want it to be smaller than the curv1 bound
 curv3_ZBOUND = [z0, z_max];
 
 
@@ -73,7 +76,7 @@ for i = 1 : G - 1
 	for j = 2 : 4 %first and last pts remain fixed
 		curv1_new(j, 2) = curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand();
 		curv2_new(j, 2) = curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand();
-		curv2_new(j, 3) = a * curv2_new[j, 2] + b;
+		curv2_new(j, 3) = a * curv2_new(j, 2) + b;
 		curv3_new(j, 3) = curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand();
 	end
 
@@ -142,9 +145,9 @@ while generation ~= convergence_conditions
 	curv3_parents = [];
 
 	for i = 1 to P
-		curv1_parents = [curv1_parents, [:, 3 * curv1(fitness_gen_index(i))]];
-		curv2_parents = [curv2_parents, [:, 3 * curv2(fitness_gen_index(i))]];
-		curv3_parents = [curv3_parents, [:, 3 * curv3(fitness_gen_index(i))]];
+		curv1_parents = [curv1_parents, curv1(:, 3*fitness_gen_index(i))];
+		curv2_parents = [curv2_parents, curv2(:, 3*fitness_gen_index(i))]];
+		curv3_parents = [curv3_parents, curv3(:, 3*fitness_gen_index(i))]];
 	end
 
 	% Reset the generation dataset to include the parent subgroup
@@ -321,7 +324,7 @@ end
 
 
 
-"""
+%{
 ==== MISSING ====
 At the end, print the best results / store them as a variable and also update the CAD model with them (by running the macro)
 and also plot the convergence over generations
@@ -330,7 +333,7 @@ and also plot the convergence over generations
 Current issues: need to make sure amount of mutated children is ok (currently generates 3 * P + 1, should be either P + 3 * C
 (with C being appropriate given P) or 3 * P + C, although then have to choose which one to mutate)
 ==== MISSING =====
-"""
+%}
 
 
 
