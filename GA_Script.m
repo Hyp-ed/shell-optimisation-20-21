@@ -250,7 +250,6 @@ while generation ~= convergence_conditions
             end   
         end
         
-
         
 
 	curv1_new = curv1_parents_temp;
@@ -375,8 +374,9 @@ grid
 
 %{
 ==== MISSING ====
-At the end, print the best results / store them as a variable and also update the CAD model with them (by running the macro)
-and also plot the convergence over generations
+
+BUG WITH MUTATION SUBGROUP – sometimes the mutation changes a coordinate to
+0 randomly
 
 
 Current issues: need to make sure amount of mutated children is ok (currently generates 3 * P + 1, should be either P + 3 * C
