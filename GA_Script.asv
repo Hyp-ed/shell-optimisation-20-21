@@ -9,6 +9,13 @@ z0 = 2; %z-coord of the side of the rectillinear chassis (z = 0 at centerline)
 G = 5; % max no. of generations
 precision = 2; % no. of d.p. of coords
 
+convergence_conditions = 5; %for now should be just no. of generations
+P = 2; %even no. of parents chosen from prevs generation
+C = 1; %no. of children for each subgroup
+c_rate = 1 / 3; %crossover rate (inverse should be an inteeger)
+m_rate = 1 / 5; %mutation rate (inverse should be an inteeger)
+
+
 % Dummy variable to define minimum drag shape
 % CFD will evaluate "closeness" to this shape for now
 curv1_target = [1.1*y0; 1.15*y0; 1.1*y0];
@@ -120,26 +127,20 @@ for i = 1 : 3 : 3*G
 end
 
 
-[fitness_gen, fitness_gen_index] = sort(fitness_gen, 'descend');
+[temp, fitness_gen_index] = sort(fitness_gen(1, :));
+fitness_gen = fitness_gen(:, fitness_gen_index);
 fitness_history = [fitness_history, fitness_gen(:, 1)];
 
 
 
 %% ACTUAL GA
 
-convergence_conditions = 5; %for now should be just no. of generations
 generation = 0;
 
-P = 2; %even no. of parents chosen from prevs generation
-c_rate = 1 / 3; %crossover rate (inverse should be an inteeger)
-m_rate = 1 / 5; %mutation rate (inverse should be an inteeger)
 
 if mod(P, 2) ~= 0
 	fprintf("ERROR: P is not even!")
 end
-
-C = 1; %no. of children for each subgroup
-
 
 % Repeat until convergence reached
 while generation ~= convergence_conditions
@@ -150,11 +151,12 @@ while generation ~= convergence_conditions
 	curv2_parents = [];
 	curv3_parents = [];
 
+    
 	for i = 1 : P
-		curv1_parents = [curv1_parents, curv1(:, 3*fitness_gen_index(i))];
-		curv2_parents = [curv2_parents, curv2(:, 3*fitness_gen_index(i))];
-		curv3_parents = [curv3_parents, curv3(:, 3*fitness_gen_index(i))];
-	end
+		curv1_parents = [curv1_parents, curv1(:, 3*fitness_gen_index(i)-2 : 3*fitness_gen_index(i))];
+		curv2_parents = [curv2_parents, curv2(:, 3*fitness_gen_index(i)-2 : 3*fitness_gen_index(i))];
+		curv3_parents = [curv3_parents, curv3(:, 3*fitness_gen_index(i)-2 : 3*fitness_gen_index(i))];
+    end
 
 	% Reset the generation dataset to include the parent subgroup
 	curv1 = [curv1_parents];
@@ -207,7 +209,7 @@ while generation ~= convergence_conditions
 
 
 	% Create crossover + mutation subgroup
-	for i = 2 to 4
+	for i = 2 : 4
 		for j = 1 : 6 : 3*P
 			crand1 = randi(1 / c_rate);
 			crand2 = randi(1 / c_rate);
@@ -235,24 +237,22 @@ while generation ~= convergence_conditions
 		for j = 2 : 3 : 3*P
 			mrand1 = randi(1 / m_rate);
 			mrand2 = randi(1 / m_rate);
-
+            mrand3 = randi(1 / m_rate);
 			if mrand1 == 1
-				curv1_parents_temp(j, 2) = round(curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand(), precision);
-            end
-            
+				curv1_parents_temp(i, j) = round(curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand(), precision);
+            end 
 			if mrand2 == 1
-				curv2_parents_temp(j, 2) = round(curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand(), precision);
-				curv2_parents_temp(j, 3) = round(a * curv2_new(j, 2) + b, 2);
+				curv2_parents_temp(i, j) = round(curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand(), precision);
+				curv2_parents_temp(i, j+1) = round(a * curv2_new(j, 2) + b, 2);
             end
+            if mrand3 == 1
+				curv3_parents_temp(i, j+1) = round(curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand(), precision);
+            end   
         end
         
-		for j = 3 : 3 : 3*P
-			mrand3 = randi(1 / m_rate);
 
-			if mrand3 == 1
-				curv3_parents_temp(j, 3) = round(curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand(), precision);
-            end
-        end
+        
+
 	curv1_new = curv1_parents_temp;
 	curv2_new = curv2_parents_temp;
 	curv3_new = curv3_parents_temp;
@@ -264,27 +264,27 @@ while generation ~= convergence_conditions
     end
 
 	% Create mutation only subgroup
-	for i = 2 to 4
+	for i = 2 : 4
 		for j = 2 : 3 : 3*P
 			mrand1 = randi(1 / m_rate);
 			mrand2 = randi(1 / m_rate);
+            mrand3 = randi(1 / m_rate);
 			if mrand1 == 1
-				curv1_parents_temp(j, 2) = round(curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand(), precision);
+				curv1_parents_temp(i, j) = round(curv1_YBOUND(1) + (curv1_YBOUND(2) - curv1_YBOUND(1)) * rand(), precision);
             end
 			if mrand2 == 1
-				curv2_parents_temp(j, 2) = round(curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand(), precision);
-				curv2_parents_temp(j, 3) = round(a * curv2_new(j, 2) + b, precision);
+				curv2_parents_temp(i, j) = round(curv2_YBOUND(1) + (curv2_YBOUND(2) - curv2_YBOUND(1)) * rand(), precision);
+				curv2_parents_temp(i, j+1) = round(a * curv2_new(j, 2) + b, precision);
             end
-        end        
-		for j = 3 : 3 : 3*P
-			mrand3 = randi(1 / m_rate);
 			if mrand3 == 1
-				curv3_parents_temp(j, 3) = round(curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand(), precision);
+				curv3_parents_temp(i, j+1) = round(curv3_ZBOUND(1) + (curv3_ZBOUND(2) - curv3_ZBOUND(1)) * rand(), precision);
             end
         end
 	curv1_new = curv1_parents_temp;
 	curv2_new = curv2_parents_temp;
 	curv3_new = curv3_parents_temp;
+    
+    
 	curv1 = [curv1, curv1_new];
 	curv2 = [curv2, curv2_new];
 	curv3 = [curv3, curv3_new];
@@ -309,14 +309,14 @@ while generation ~= convergence_conditions
 			run_COMSOL_CFD();
 			save_COMSOL_results('result.csv')
 			result = read_CSV('result.csv');
-
-			if i <= P
+        
+			if i <= 3*P-2
 				tag = "P";
-			elseif P < i < P + C
+			elseif 3*P-2 < i && i <= 3*(P+C)-2
 				tag = "C";
-			elseif P + C < i <= P + 2*C
+			elseif 3*(P+C)-2 < i && i <= 3*(P+2*C)-2
 				tag = "CM";
-			elseif P + 2*C < i <= P + 3*C
+			elseif 3*(P+2*C)-2 < i && i <= 3*(P+3*C)-2
 				tag = "M";
 			end
 
@@ -324,12 +324,52 @@ while generation ~= convergence_conditions
         end
 
 
-	[temp, order] = sort(fitness_gen, 'descend');
-	fitness_gen = fitness_gen(:, order);
-	fitness_history = [fitness_history, fitness_gen(:, 1)];
+        [temp, fitness_gen_index] = sort(fitness_gen(1, :));
+        fitness_gen = fitness_gen(:, fitness_gen_index);
+        fitness_history = [fitness_history, fitness_gen(:, 1)];
     end
 end
 
+
+
+%% Post-processing
+
+% Print the best results & save to CSV
+curv1_best = curv1(:, 3*fitness_gen_index(1)-2:3*fitness_gen_index(1))
+curv2_best = curv2(:, 3*fitness_gen_index(1)-2:3*fitness_gen_index(1))
+curv3_best = curv3(:, 3*fitness_gen_index(1)-2:3*fitness_gen_index(1))
+
+save_to_CSV('coords1.csv', curv1_temp);
+save_to_CSV('coords2.csv', curv2_temp);
+save_to_CSV('coords3.csv', curv3_temp);
+
+% Update CAD model
+run_solidworks_macro();
+
+% Convert the result history into numeric from strings
+temp = [];
+for i = 1:length(fitness_history)
+    temp = [temp, str2double(fitness_history(1, i))];
+end
+
+% Plot the convergence over time
+figure(1)
+tiledlayout(1, 2)
+nexttile
+plot(1:length(fitness_history), temp)
+title("Fitness over generations")
+xlabel("Generation")
+ylabel("Fitness score")
+grid minor
+
+% Plot the histogram
+nexttile
+title("")
+[tag, temp, group] = unique(fitness_history(2, :));
+counts = groupcounts(group)';
+bar(counts)
+set(gca, 'xticklabel', tag)
+grid
 
 %{
 ==== MISSING ====
@@ -372,22 +412,30 @@ end
 
 % For now dummy fn that returns a result based on how close to dummy target
 function cfd = run_COMSOL_CFD()
-    curv1_score = read_CSV('coords1.csv') ./ curv1_target;
-    curv2_score = read_CSV('coords2.csv') ./ curv2_target;
-    curv3_score = read_CSV('coords3.csv') ./ curv3_target;
-    save_to_CSV('resu')
-  
-    total = sum(curv1_score(2:4, 2)) + sum(curv2_score(2:4, 2)) + sum(curv3_score(2:4, 3));
+
+    global curv1_target curv2_target curv3_target
     
+    curv1_dummy = csvread('coords1.csv');
+    curv2_dummy = csvread('coords2.csv');
+    curv3_dummy = csvread('coords3.csv');
+    
+    curv1_score = abs(curv1_dummy(2:4, 2) - curv1_target);
+    curv2_score = abs(curv2_dummy(2:4, 2) - curv2_target);
+    curv3_score = abs(curv3_dummy(2:4, 3) - curv3_target);
+    dummy_score = sum(curv1_score) + sum(curv2_score) + sum(curv3_score);
+
+    save_to_CSV('result.csv', dummy_score)
+      
 
 	%cfd = fprintf("Run COMSOL sim function not finished!\n\n");
 end
 
 % For now saves the dummy array from run_COMSOL_CFD
 function cfd_res = save_COMSOL_results(file)
-    % Dummy result, change later
-    dummy_result = 400 + 100 * rand();
-    save_to_CSV(file, dummy_result)
+    % Dummy result, currently replaced with the run_COMSOL_CFD dummy
+    % function
+    %dummy_result = 400 + 100 * rand();
+    %save_to_CSV(file, dummy_result)
     
 	%cfd_res = fprintf("Save COMSOL results function not finished!\n\n");
 end
