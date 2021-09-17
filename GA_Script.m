@@ -3,6 +3,44 @@ clear; clc; close all;
 global curv1_target curv2_target curv3_target
 
 
+%% System setup
+% (Make sure Solidworks is the default software for opening the SLDPRT files)
+
+
+% Solidworks path
+path_sld = 'C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\SLDWORKS';
+
+% Path of the model to be optimized
+path_model = 'C:\Users\maksg\Google Drive\Macbook Backup\Learning\HYPED\Test_Shell.SLDPRT';
+
+% Path of the script to send a keystroke to Solidworks
+path_keystroke_script = 'C:\Users\maksg\Google Drive\Macbook Backup\Learning\HYPED\shell-optimisation-20-21\keystroke_script.ps1';
+keystroke_cmd = strjoin({'powershell -ExecutionPolicy Unrestricted -inputformat none -file "', path_keystroke_script, '"'}, "");
+
+
+% Command to open load the model only if Solidworks is not open already
+%command = strjoin({'tasklist /nh /fi "imagename eq SLDWORKS.exe" | find /i "SLDWORKS.exe" > nul ||("', path_model, '")'}, "");
+%system(command)
+% BUT IT SEEMS THAT IT DOESN'T SPEND TIME RELOADING THE FILE IF IT IS OPEN
+% ANYWAY, HENCE THIS COMMAND IS SUFFICIENT:
+system(path_model);
+
+% Close Solidworks (model will need to be reopened to update from the design table)
+system("taskkill /IM SLDWORKS.exe");
+system('powershell -ExecutionPolicy Unrestricted -inputformat none -file keystroke_script.ps1');
+
+% NOT WORKING - try to write the psh command directly instead of having an
+% external file
+%system('powershell -Command $myshell = New-Object -com "Wscript.Shell";$myshell.sendkeys("{ENTER}")')
+
+% NOT WORKING - Run the SLD macro (will delete later)
+% path_macro = 'C:\Users\maksg\Google Drive\Macbook Backup\Learning\HYPED\Dinosaur_Macro.swp';
+% command = strjoin({'"', path_sld, '" "\m" "', path_macro, '"'}, '');
+% system(command)
+
+
+
+
 %% Input params
 y0 = 2; %y-coord of the top of the rectillinear chassis (y = 0 at chassis bottom edge)
 z0 = 2; %z-coord of the side of the rectillinear chassis (z = 0 at centerline)
